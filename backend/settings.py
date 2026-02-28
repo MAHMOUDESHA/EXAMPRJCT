@@ -59,12 +59,7 @@ WSGI_APPLICATION = 'wsgi.application'
 # ---------------- DATABASE FLEXIBLE ----------------
 # If DATABASE_URL is set (Render/Heroku), use it.
 # Otherwise, fall back to local PostgreSQL settings.
-DATABASES = {
-    'default': dj_database_url.config(
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
-}
+DATABASES = { 'default': dj_database_url.config( default=os.environ.get('DATABASE_URL') ) }
 # ---------------------------------------------------
 
 AUTH_PASSWORD_VALIDATORS = [
