@@ -59,21 +59,12 @@ WSGI_APPLICATION = 'wsgi.application'
 # ---------------- DATABASE FLEXIBLE ----------------
 # If DATABASE_URL is set (Render/Heroku), use it.
 # Otherwise, fall back to local PostgreSQL settings.
-if os.environ.get("DATABASE_URL"):
-    DATABASES = {
-        "default": dj_database_url.config(default=os.environ["DATABASE_URL"])
-    }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.environ.get('DB_NAME', 'ExamMarks_db'),
-            'USER': os.environ.get('DB_USER', 'postgres'),
-            'PASSWORD': os.environ.get('DB_PASSWORD', 'kibigija'),
-            'HOST': os.environ.get('DB_HOST', 'localhost'),
-            'PORT': os.environ.get('DB_PORT', '5432'),
-        }
-    }
+DATABASES = {
+    'default': dj_database_url.config(
+        conn_max_age=600,
+        conn_health_checks=True,
+    )
+}
 # ---------------------------------------------------
 
 AUTH_PASSWORD_VALIDATORS = [
