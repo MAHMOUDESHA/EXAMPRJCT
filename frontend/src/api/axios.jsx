@@ -1,8 +1,9 @@
 import axios from 'axios';
 
-// Use relative path for proxy or direct backend URL
-const API_URL = import.meta.env.PROD 
-  ? '/api' 
+// Use environment variable for API URL
+// In production, set VITE_API_URL to your backend URL
+const API_URL = import.meta.env.VITE_API_URL 
+  ? `${import.meta.env.VITE_API_URL}/api`
   : 'http://localhost:8000/api';
 
 // Get CSRF token from cookie
@@ -39,7 +40,11 @@ api.interceptors.request.use(
     }
     
     // Add CSRF token for POST, PUT, DELETE requests
-    const csrfToken = getCSRFToken();
+    // First check localStorage (from login response), then check cookie
+    let csrfToken = localStorage.getItem('csrf_token');
+    if (!csrfToken) {
+      csrfToken = getCSRFToken();
+    }
     if (csrfToken && ['post', 'put', 'patch', 'delete'].includes(config.method)) {
       config.headers['X-CSRFToken'] = csrfToken;
     }
@@ -93,7 +98,7 @@ api.interceptors.response.use(
           throw new Error('No refresh token');
         }
 
-        const response = await axios.post(`${API_URL}/auth/token/refresh/`, {
+        const response = await axios.post(`${API_URL}/accounts/auth/token/refresh/`, {
           refresh: refreshToken
         }, {
           withCredentials: true

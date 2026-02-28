@@ -13,6 +13,10 @@ export const setAuthData = (data) => {
   if (data.user) {
     localStorage.setItem('user', JSON.stringify(data.user));
   }
+  // Save CSRF token from login response
+  if (data.csrf_token) {
+    localStorage.setItem('csrf_token', data.csrf_token);
+  }
 };
 
 // Clear auth data on logout
@@ -20,6 +24,7 @@ export const clearAuthData = () => {
   localStorage.removeItem('token');
   localStorage.removeItem('refresh_token');
   localStorage.removeItem('user');
+  localStorage.removeItem('csrf_token');
 };
 
 // Get current user

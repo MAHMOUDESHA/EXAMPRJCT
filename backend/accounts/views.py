@@ -44,10 +44,15 @@ class LoginView(generics.GenericAPIView):
         
         refresh = RefreshToken.for_user(user)
         
+        # Get CSRF token for the response
+        from django.middleware.csrf import get_token
+        csrf_token = get_token(request)
+        
         return Response({
             'user': UserSerializer(user).data,
             'access_token': str(refresh.access_token),
-            'refresh_token': str(refresh)
+            'refresh_token': str(refresh),
+            'csrf_token': csrf_token
         })
 
 class LogoutView(generics.GenericAPIView):
@@ -410,9 +415,19 @@ class DashboardStatsView(generics.GenericAPIView):
                 student_results = Result.objects.filter(
                     models.Q(student=student) | models.Q(registration_number=student.registration_number)
                 ).distinct()
+                student_info = {
+                    'registration_number': student.registration_number,
+                    'full_name': student.full_name,
+                    'current_class': student.current_class,
+                }
             else:
                 # If no student profile, try to get results by registration_number
                 student_results = Result.objects.filter(registration_number=student_reg_number)
+                student_info = {
+                    'registration_number': student_reg_number,
+                    'full_name': user.first_name + ' ' + user.last_name,
+                    'current_class': None,
+                }
             total_subjects = student_results.count()
             
             # Calculate average
@@ -456,11 +471,7 @@ class DashboardStatsView(generics.GenericAPIView):
             
             data = {
                 'user_type': 'student',
-                'student_info': {
-                    'registration_number': student.registration_number,
-                    'full_name': student.full_name,
-                    'current_class': student.current_class,
-                },
+                'student_info': student_info,
                 'stats': {
                     'total_subjects': total_subjects,
                     'average': average,
