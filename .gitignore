@@ -61,3 +61,4 @@ Thumbs.db
 *.pyo
 .mypy_cache/
 .pytest_cache/
+.vercel
