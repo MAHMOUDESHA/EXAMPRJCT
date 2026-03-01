@@ -6,8 +6,8 @@ const envApiBase = import.meta.env.VITE_API_URL ? normalizeBaseUrl(import.meta.e
 
 // In production, VITE_API_URL must point to your deployed backend (without /api suffix).
 const API_URL = envApiBase
-  ? `${envApiBase}/api`
-  : (isLocalhost ? 'http://localhost:8000/api' : 'https://examprjct.onrender.com/api');
+  ? `${envApiBase}/api/accounts`
+  : (isLocalhost ? 'http://localhost:8000/api/accounts' : 'https://examprjct.onrender.com/api/accounts');
 
 // Get CSRF token from cookie
 const getCSRFToken = () => {
@@ -101,7 +101,7 @@ api.interceptors.response.use(
           throw new Error('No refresh token');
         }
 
-        const response = await axios.post(`${API_URL}/accounts/auth/token/refresh/`, {
+        const response = await axios.post(`${API_URL}/auth/token/refresh/`, {
           refresh: refreshToken
         }, {
           withCredentials: true
