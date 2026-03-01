@@ -1,10 +1,13 @@
 import axios from 'axios';
 
-// Use environment variable for API URL
-// In production, set VITE_API_URL to your backend URL
-const API_URL = import.meta.env.VITE_API_URL 
-  ? `${import.meta.env.VITE_API_URL}/api`
-  : 'http://localhost:8000/api';
+const normalizeBaseUrl = (url) => url.replace(/\/+$/, '');
+const isLocalhost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+const envApiBase = import.meta.env.VITE_API_URL ? normalizeBaseUrl(import.meta.env.VITE_API_URL) : '';
+
+// In production, VITE_API_URL must point to your deployed backend (without /api suffix).
+const API_URL = envApiBase
+  ? `${envApiBase}/api`
+  : (isLocalhost ? 'http://localhost:8000/api' : 'https://examprjct.onrender.com/api');
 
 // Get CSRF token from cookie
 const getCSRFToken = () => {

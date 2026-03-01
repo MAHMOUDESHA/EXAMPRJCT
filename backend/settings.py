@@ -123,17 +123,35 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://*.onrender.com",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://.*\.vercel\.app$",
+    r"^https://.*\.onrender\.com$",
 ]
 
-# CSRF trusted origins for production (Render)
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://*.vercel.app",
     "https://*.onrender.com",
 ]
 
 CORS_ALLOW_CREDENTIALS = True
+
+# Optional comma-separated env values:
+# CORS_ALLOWED_ORIGINS="https://your-frontend.vercel.app,https://another-domain.com"
+# CSRF_TRUSTED_ORIGINS="https://your-frontend.vercel.app"
+extra_cors_origins = os.environ.get("CORS_ALLOWED_ORIGINS", "")
+if extra_cors_origins:
+    CORS_ALLOWED_ORIGINS += [origin.strip() for origin in extra_cors_origins.split(",") if origin.strip()]
+
+extra_csrf_origins = os.environ.get("CSRF_TRUSTED_ORIGINS", "")
+if extra_csrf_origins:
+    CSRF_TRUSTED_ORIGINS += [origin.strip() for origin in extra_csrf_origins.split(",") if origin.strip()]
 
 # CSRF Settings
 CSRF_COOKIE_HTTPONLY = False
