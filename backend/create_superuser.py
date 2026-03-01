@@ -56,16 +56,6 @@ def ensure_superuser():
     else:
         print(f"Superuser already up to date: {username}")
 
-    # Ensure this account remains admin-only.
-    removed_teacher = Teacher.objects.filter(user=user).delete()[0]
-    removed_student = Student.objects.filter(user=user).delete()[0]
-    if removed_teacher or removed_student:
-        print(
-            "Removed non-admin profiles for superuser:",
-            f"teacher={removed_teacher}, student={removed_student}",
-        )
-
-
 def _unique_employee_id():
     import random
     import string
