@@ -61,38 +61,38 @@ class LoginSerializer(serializers.Serializer):
         if not username_input or not password:
             raise serializers.ValidationError("Username and password are required")
 
-        # Allow login by username, email, or registration number.
+        # Allow login by username (case-insensitive), email, registration number, or employee ID.
         login_usernames = [username_input]
 
-        try:
-            user_by_email = User.objects.get(email__iexact=username_input)
+        user_by_username = User.objects.filter(username__iexact=username_input).first()
+        if user_by_username:
+            login_usernames.append(user_by_username.username)
+
+        user_by_email = User.objects.filter(email__iexact=username_input).first()
+        if user_by_email:
             login_usernames.append(user_by_email.username)
-        except User.DoesNotExist:
-            pass
 
-        try:
-            user_by_reg = User.objects.get(registration_number__iexact=username_input)
+        user_by_reg = User.objects.filter(registration_number__iexact=username_input).first()
+        if user_by_reg:
             login_usernames.append(user_by_reg.username)
-        except User.DoesNotExist:
-            pass
 
-        try:
-            student = Student.objects.select_related('user').get(registration_number__iexact=username_input)
-            if student.user_id:
-                login_usernames.append(student.user.username)
-        except Student.DoesNotExist:
-            pass
+        student = Student.objects.select_related('user').filter(registration_number__iexact=username_input).first()
+        if student and student.user_id:
+            login_usernames.append(student.user.username)
 
-        try:
-            teacher = Teacher.objects.select_related('user').get(employee_id__iexact=username_input)
-            if teacher.user_id:
-                login_usernames.append(teacher.user.username)
-        except Teacher.DoesNotExist:
-            pass
+        teacher = Teacher.objects.select_related('user').filter(employee_id__iexact=username_input).first()
+        if teacher and teacher.user_id:
+            login_usernames.append(teacher.user.username)
 
         for login_username in dict.fromkeys(login_usernames):
             user = authenticate(username=login_username, password=password)
             if user:
+                # Keep legacy users in sync for results lookup.
+                if not user.registration_number:
+                    student_profile = Student.objects.filter(user=user).first()
+                    if student_profile and student_profile.registration_number:
+                        user.registration_number = student_profile.registration_number
+                        user.save(update_fields=['registration_number'])
                 return user
 
         raise AuthenticationFailed("Invalid username or password")

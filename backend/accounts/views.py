@@ -376,7 +376,19 @@ class DashboardStatsView(generics.GenericAPIView):
             }
             
         elif user.user_type == 'teacher':
-            teacher = Teacher.objects.get(user=user)
+            teacher = Teacher.objects.filter(user=user).first()
+            if not teacher:
+                # Legacy account without teacher profile
+                return Response({
+                    'user_type': 'teacher',
+                    'stats': {
+                        'total_results': 0,
+                        'students_count': 0,
+                        'subjects_count': 0,
+                    },
+                    'recent_results': [],
+                    'warning': 'Teacher profile not found for this account.',
+                })
             
             # Get results entered by this teacher
             teacher_results = Result.objects.filter(teacher=teacher)
@@ -408,7 +420,7 @@ class DashboardStatsView(generics.GenericAPIView):
                 student_reg_number = student.registration_number
             except Student.DoesNotExist:
                 student = None
-                student_reg_number = user.registration_number
+                student_reg_number = user.registration_number or user.username
             
             # Get student's results - include both results linked to student and by registration_number
             if student:
