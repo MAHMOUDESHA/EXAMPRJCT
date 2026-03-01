@@ -25,9 +25,11 @@ const Login = () => {
       try {
         response = await api.post('/auth/login/', formData);
       } catch (firstError) {
-        // Render free instances can be slow to wake up; retry once on network-level failure.
-        if (firstError?.request && !firstError?.response) {
-          await wait(1500);
+        // Render instances can be slow to wake up; retry once on timeout/network-level failure.
+        const isNetworkIssue = firstError?.request && !firstError?.response;
+        const isTimeout = firstError?.code === 'ECONNABORTED';
+        if (isNetworkIssue || isTimeout) {
+          await wait(3000);
           response = await api.post('/auth/login/', formData);
         } else {
           throw firstError;
@@ -48,7 +50,7 @@ const Login = () => {
     } catch (error) {
       console.error('Login error:', error);
       if (error.code === 'ECONNABORTED') {
-        setError('Server took too long to respond. Please try again in a few seconds.');
+        setError('Server is waking up. Please wait 10-20 seconds and try again.');
         return;
       }
       if (error.response) {

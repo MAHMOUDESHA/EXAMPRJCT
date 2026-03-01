@@ -28,7 +28,7 @@ const getCSRFToken = () => {
 
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 20000,
+  timeout: 45000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -109,7 +109,7 @@ api.interceptors.response.use(
           refresh: refreshToken
         }, {
           withCredentials: true,
-          timeout: 20000,
+          timeout: 45000,
         });
 
         const { access } = response.data;
