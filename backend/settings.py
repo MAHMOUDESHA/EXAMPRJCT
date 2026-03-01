@@ -125,6 +125,9 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "https://examprjct.vercel.app",
+    "https://examprjct-mahmoudeshas-projects.vercel.app",
+    "https://examprjct-mahmoudesha-mahmoudeshas-projects.vercel.app",
 ]
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^https://.*\.vercel\.app$",
@@ -136,6 +139,9 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "https://examprjct.vercel.app",
+    "https://examprjct-mahmoudeshas-projects.vercel.app",
+    "https://examprjct-mahmoudesha-mahmoudeshas-projects.vercel.app",
     "https://*.vercel.app",
     "https://*.onrender.com",
 ]

@@ -3,6 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios.jsx';
 import { setAuthData, getUserRole } from '../utils/auth';
 
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const Login = () => {
   const [formData, setFormData] = useState({ username: '', password: '' });
   const [loading, setLoading] = useState(false);
@@ -19,7 +21,19 @@ const Login = () => {
     setError('');
 
     try {
-      const response = await api.post('/auth/login/', formData);
+      let response;
+      try {
+        response = await api.post('/auth/login/', formData);
+      } catch (firstError) {
+        // Render free instances can be slow to wake up; retry once on network-level failure.
+        if (firstError?.request && !firstError?.response) {
+          await wait(1500);
+          response = await api.post('/auth/login/', formData);
+        } else {
+          throw firstError;
+        }
+      }
+
       setAuthData(response.data);
       
       // Get user role and redirect accordingly
