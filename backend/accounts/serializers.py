@@ -34,6 +34,8 @@ class RegisterSerializer(serializers.ModelSerializer):
                 full_name=f"{user.first_name} {user.last_name}",
                 registration_number=reg_number
             )
+            user.registration_number = reg_number
+            user.save(update_fields=['registration_number'])
         elif user_type == 'teacher':
             # Generate a unique employee ID
             emp_id = 'TEA' + ''.join(random.choices(string.digits, k=6))
@@ -72,6 +74,20 @@ class LoginSerializer(serializers.Serializer):
             user_by_reg = User.objects.get(registration_number__iexact=username_input)
             login_usernames.append(user_by_reg.username)
         except User.DoesNotExist:
+            pass
+
+        try:
+            student = Student.objects.select_related('user').get(registration_number__iexact=username_input)
+            if student.user_id:
+                login_usernames.append(student.user.username)
+        except Student.DoesNotExist:
+            pass
+
+        try:
+            teacher = Teacher.objects.select_related('user').get(employee_id__iexact=username_input)
+            if teacher.user_id:
+                login_usernames.append(teacher.user.username)
+        except Teacher.DoesNotExist:
             pass
 
         for login_username in dict.fromkeys(login_usernames):
