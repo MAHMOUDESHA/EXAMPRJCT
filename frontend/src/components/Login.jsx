@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios.jsx';
-import { setAuthData, getUserRole } from '../utils/auth';
+import { setAuthData, getUserRole, clearAuthData } from '../utils/auth';
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const Login = () => {
-  const [formData, setFormData] = useState({ username: '', password: '' });
+  const [formData, setFormData] = useState({ username: '', password: '', login_as: 'auto' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -55,6 +55,12 @@ const Login = () => {
       
       // Get user role and redirect accordingly
       const role = getUserRole();
+      if (formData.login_as !== 'auto' && role !== formData.login_as) {
+        clearAuthData();
+        setError(`This account is not ${formData.login_as}. Please use the correct login option.`);
+        return;
+      }
+
       if (role === 'teacher') {
         navigate('/dashboard');
       } else if (role === 'student') {
@@ -121,6 +127,21 @@ const Login = () => {
               style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '5px' }}
               required
             />
+          </div>
+
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{ display: 'block', marginBottom: '5px' }}>Login As</label>
+            <select
+              name="login_as"
+              value={formData.login_as}
+              onChange={handleChange}
+              style={{ width: '100%', padding: '8px', border: '1px solid #ddd', borderRadius: '5px' }}
+            >
+              <option value="auto">Auto Detect</option>
+              <option value="admin">Admin</option>
+              <option value="teacher">Teacher</option>
+              <option value="student">Student</option>
+            </select>
           </div>
           
           <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
