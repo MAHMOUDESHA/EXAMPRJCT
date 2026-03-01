@@ -56,7 +56,9 @@ const Register = () => {
       // Registration successful, show success message
       setSuccess(true);
     } catch (error) {
-      if (error.response && error.response.data) {
+      if (error.code === 'ECONNABORTED') {
+        setError('Server took too long to respond. Please try again in a few seconds.');
+      } else if (error.response && error.response.data) {
         // Format error messages from backend
         const errorData = error.response.data;
         const errorMessages = Object.entries(errorData)

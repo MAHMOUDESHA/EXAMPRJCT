@@ -47,6 +47,10 @@ const Login = () => {
       }
     } catch (error) {
       console.error('Login error:', error);
+      if (error.code === 'ECONNABORTED') {
+        setError('Server took too long to respond. Please try again in a few seconds.');
+        return;
+      }
       if (error.response) {
         const data = error.response.data || {};
         const fieldError = data.username?.[0] || data.password?.[0];
