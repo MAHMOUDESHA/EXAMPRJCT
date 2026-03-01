@@ -58,12 +58,14 @@ class LoginView(generics.GenericAPIView):
 class LogoutView(generics.GenericAPIView):
     def post(self, request):
         try:
-            refresh_token = request.data["refresh_token"]
-            token = RefreshToken(refresh_token)
-            token.blacklist()
-            return Response(status=status.HTTP_205_RESET_CONTENT)
-        except:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
+            refresh_token = request.data.get("refresh_token")
+            if refresh_token:
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+        except Exception:
+            # Logout should remain idempotent on the client side.
+            pass
+        return Response(status=status.HTTP_205_RESET_CONTENT)
 
 # ------------------------------------------------------------
 # VIEWSETS (CRUD automatic!)

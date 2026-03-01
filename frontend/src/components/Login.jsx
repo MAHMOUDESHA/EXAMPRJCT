@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios.jsx';
-import { setAuthData, getUserRole, clearAuthData } from '../utils/auth';
+import { setAuthData, getUserRole } from '../utils/auth';
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -55,11 +55,6 @@ const Login = () => {
       
       // Get user role and redirect accordingly
       const role = getUserRole();
-      if (formData.login_as !== 'auto' && role !== formData.login_as) {
-        clearAuthData();
-        setError(`This account is not ${formData.login_as}. Please use the correct login option.`);
-        return;
-      }
 
       if (role === 'teacher') {
         navigate('/dashboard');
