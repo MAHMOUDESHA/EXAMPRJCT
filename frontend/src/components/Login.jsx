@@ -21,19 +21,34 @@ const Login = () => {
     setError('');
 
     try {
-      let response;
+      // Warm backend before login (helps with Render cold starts).
       try {
-        response = await api.post('/auth/login/', formData);
-      } catch (firstError) {
-        // Render instances can be slow to wake up; retry once on timeout/network-level failure.
-        const isNetworkIssue = firstError?.request && !firstError?.response;
-        const isTimeout = firstError?.code === 'ECONNABORTED';
-        if (isNetworkIssue || isTimeout) {
-          await wait(3000);
+        await api.get('/auth/csrf/');
+      } catch {
+        // Ignore warmup errors; login retry loop below handles transient failures.
+      }
+
+      let response;
+      let lastError;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
           response = await api.post('/auth/login/', formData);
-        } else {
-          throw firstError;
+          break;
+        } catch (attemptError) {
+          lastError = attemptError;
+          const isNetworkIssue = attemptError?.request && !attemptError?.response;
+          const isTimeout = attemptError?.code === 'ECONNABORTED';
+          const shouldRetry = (isNetworkIssue || isTimeout) && attempt < 3;
+          if (shouldRetry) {
+            await wait(2000 * attempt);
+            continue;
+          }
+          throw attemptError;
         }
+      }
+
+      if (!response) {
+        throw lastError || new Error('Login failed');
       }
 
       setAuthData(response.data);
