@@ -2,6 +2,7 @@ import os
 import dj_database_url
 from pathlib import Path
 from datetime import timedelta
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -59,11 +60,21 @@ WSGI_APPLICATION = 'wsgi.application'
 # ---------------- DATABASE FLEXIBLE ----------------
 # If DATABASE_URL is set (Render/Heroku), use it.
 # Otherwise, fall back to local PostgreSQL settings.
-if os.environ.get("DATABASE_URL"):
+database_url = os.environ.get("DATABASE_URL")
+if database_url:
     DATABASES = {
-        "default": dj_database_url.config(default=os.environ["DATABASE_URL"])
+        "default": dj_database_url.config(
+            default=database_url,
+            conn_max_age=600,
+            ssl_require=not DEBUG,
+        )
     }
 else:
+    # In production, force explicit DB config instead of silently falling back
+    # to localhost which causes long request timeouts on hosted platforms.
+    if not DEBUG:
+        raise ImproperlyConfigured("DATABASE_URL is required when DEBUG=False")
+
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -72,6 +83,9 @@ else:
             'PASSWORD': os.environ.get('DB_PASSWORD', 'kibigija'),
             'HOST': os.environ.get('DB_HOST', 'localhost'),
             'PORT': os.environ.get('DB_PORT', '5432'),
+            'OPTIONS': {
+                'connect_timeout': int(os.environ.get('DB_CONNECT_TIMEOUT', '5')),
+            },
         }
     }
 # ---------------------------------------------------
