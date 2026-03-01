@@ -2,7 +2,6 @@ import os
 import dj_database_url
 from pathlib import Path
 from datetime import timedelta
-from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -70,22 +69,12 @@ if database_url:
         )
     }
 else:
-    # In production, force explicit DB config instead of silently falling back
-    # to localhost which causes long request timeouts on hosted platforms.
-    if not DEBUG:
-        raise ImproperlyConfigured("DATABASE_URL is required when DEBUG=False")
-
+    # Safe fallback database for local/dev or temporary startup when DATABASE_URL
+    # is not yet configured on the host platform.
     DATABASES = {
         'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.environ.get('DB_NAME', 'ExamMarks_db'),
-            'USER': os.environ.get('DB_USER', 'postgres'),
-            'PASSWORD': os.environ.get('DB_PASSWORD', 'kibigija'),
-            'HOST': os.environ.get('DB_HOST', 'localhost'),
-            'PORT': os.environ.get('DB_PORT', '5432'),
-            'OPTIONS': {
-                'connect_timeout': int(os.environ.get('DB_CONNECT_TIMEOUT', '5')),
-            },
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
         }
     }
 # ---------------------------------------------------

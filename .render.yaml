@@ -2,7 +2,7 @@ services:
   - type: web
     name: exam-marks-sys
     env: python
-    buildCommand: cd backend && pip install -r ../requirements.txt && python manage.py collectstatic --noinput
+    buildCommand: cd backend && pip install -r requirements.txt && python manage.py collectstatic --noinput
     preDeployCommand: cd backend && python manage.py migrate && python create_superuser.py
     startCommand: cd backend && gunicorn wsgi:application --bind 0.0.0.0:$PORT
     envVars:
