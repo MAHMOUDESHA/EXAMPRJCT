@@ -53,9 +53,32 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField()
     
     def validate(self, data):
-        user = authenticate(**data)
-        if user:
-            return user
+        username_input = (data.get('username') or '').strip()
+        password = data.get('password')
+
+        if not username_input or not password:
+            raise serializers.ValidationError("Username and password are required")
+
+        # Allow login by username, email, or registration number.
+        login_usernames = [username_input]
+
+        try:
+            user_by_email = User.objects.get(email__iexact=username_input)
+            login_usernames.append(user_by_email.username)
+        except User.DoesNotExist:
+            pass
+
+        try:
+            user_by_reg = User.objects.get(registration_number__iexact=username_input)
+            login_usernames.append(user_by_reg.username)
+        except User.DoesNotExist:
+            pass
+
+        for login_username in dict.fromkeys(login_usernames):
+            user = authenticate(username=login_username, password=password)
+            if user:
+                return user
+
         raise AuthenticationFailed("Invalid username or password")
 
 
