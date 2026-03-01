@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth import authenticate
 from .models import *
 import random
@@ -55,7 +56,7 @@ class LoginSerializer(serializers.Serializer):
         user = authenticate(**data)
         if user:
             return user
-        raise serializers.ValidationError("Invalid credentials")
+        raise AuthenticationFailed("Invalid username or password")
 
 
 class StudentSerializer(serializers.ModelSerializer):

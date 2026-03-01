@@ -34,12 +34,15 @@ const Login = () => {
     } catch (error) {
       console.error('Login error:', error);
       if (error.response) {
+        const data = error.response.data || {};
+        const fieldError = data.username?.[0] || data.password?.[0];
+        const nonFieldError = data.non_field_errors?.[0];
+        const detailError = data.detail;
+
         if (error.response.status === 401) {
-          setError('Invalid username or password');
+          setError(detailError || 'Invalid username or password');
         } else if (error.response.status === 400) {
-          setError('Please provide both username and password');
-        } else if (error.response.data && error.response.data.detail) {
-          setError(error.response.data.detail);
+          setError(fieldError || nonFieldError || detailError || 'Please provide both username and password');
         } else {
           setError('Login failed. Please try again.');
         }
