@@ -74,6 +74,11 @@ const DashboardRouter = () => {
   }
 };
 
+const AdminRedirect = () => {
+  window.location.href = 'https://examprjct.onrender.com/admin/';
+  return null;
+};
+
 function App() {
   return (
     <BrowserRouter>
@@ -82,6 +87,7 @@ function App() {
         <Route path="/login" element={<AppLayout><Login /></AppLayout>} />
         <Route path="/logout" element={<AppLayout><Logout /></AppLayout>} />
         <Route path="/register" element={<AppLayout><Register /></AppLayout>} />
+        <Route path="/admin" element={<AdminRedirect />} />
         
         {/* Protected Routes */}
         <Route path="/dashboard" element={
