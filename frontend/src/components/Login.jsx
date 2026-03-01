@@ -49,7 +49,7 @@ const Login = () => {
       } else if (error.request) {
         setError('Cannot connect to server. Please check if the backend is running.');
       } else {
-        setError('An error occurred. Please try again.');
+        setError(error?.message || 'An error occurred. Please try again.');
       }
     } finally {
       setLoading(false);

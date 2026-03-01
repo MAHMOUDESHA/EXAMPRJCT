@@ -12,6 +12,8 @@ export const setAuthData = (data) => {
   }
   if (data.user) {
     localStorage.setItem('user', JSON.stringify(data.user));
+  } else {
+    localStorage.removeItem('user');
   }
   // Save CSRF token from login response
   if (data.csrf_token) {
@@ -30,7 +32,14 @@ export const clearAuthData = () => {
 // Get current user
 export const getCurrentUser = () => {
   const user = localStorage.getItem('user');
-  return user ? JSON.parse(user) : null;
+  if (!user) return null;
+  try {
+    return JSON.parse(user);
+  } catch {
+    // Recover from previously stored invalid values (e.g. legacy non-JSON).
+    localStorage.removeItem('user');
+    return null;
+  }
 };
 
 // Check if user is authenticated
