@@ -3,8 +3,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios.jsx';
 import { setAuthData, getUserRole } from '../utils/auth';
 
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
 const Login = () => {
   const [formData, setFormData] = useState({ username: '', password: '', login_as: 'auto' });
   const [loading, setLoading] = useState(false);
@@ -21,35 +19,7 @@ const Login = () => {
     setError('');
 
     try {
-      // Warm backend before login (helps with Render cold starts).
-      try {
-        await api.get('/auth/csrf/');
-      } catch {
-        // Ignore warmup errors; login retry loop below handles transient failures.
-      }
-
-      let response;
-      let lastError;
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        try {
-          response = await api.post('/auth/login/', formData);
-          break;
-        } catch (attemptError) {
-          lastError = attemptError;
-          const isNetworkIssue = attemptError?.request && !attemptError?.response;
-          const isTimeout = attemptError?.code === 'ECONNABORTED';
-          const shouldRetry = (isNetworkIssue || isTimeout) && attempt < 3;
-          if (shouldRetry) {
-            await wait(2000 * attempt);
-            continue;
-          }
-          throw attemptError;
-        }
-      }
-
-      if (!response) {
-        throw lastError || new Error('Login failed');
-      }
+      const response = await api.post('/auth/login/', formData);
 
       setAuthData(response.data);
       

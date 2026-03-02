@@ -1,115 +1,92 @@
+#!/usr/bin/env python
+"""
+Create superuser automatically for Render deployment.
+Place this file in the backend folder.
+Usage: python backend/create_superuser.py
+"""
+
 import os
+import sys
 import django
+import logging
 
+# Setup logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "settings")
-django.setup()
+def setup_django():
+    """Setup Django environment"""
+    # Get the directory containing this script
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    
+    # Add the backend directory to Python path (though we're already there)
+    sys.path.append(BASE_DIR)
+    
+    # Set Django settings module
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
+    
+    # Setup Django
+    django.setup()
+    
+    logging.info(f"Django setup complete. BASE_DIR: {BASE_DIR}")
 
-from django.contrib.auth import get_user_model  # noqa: E402
-from accounts.models import Student, Teacher  # noqa: E402
-
-
-def ensure_superuser():
-    username = os.environ.get("DJANGO_SUPERUSER_USERNAME")
-    email = os.environ.get("DJANGO_SUPERUSER_EMAIL")
-    password = os.environ.get("DJANGO_SUPERUSER_PASSWORD")
-
-    if not username or not email or not password:
-        print("Superuser env vars not set. Skipping superuser creation.")
+def create_superuser():
+    """Create superuser if it doesn't exist"""
+    from django.contrib.auth import get_user_model
+    
+    User = get_user_model()
+    
+    # Get credentials from environment variables (Render's environment)
+    username = os.environ.get('DJANGO_SUPERUSER_USERNAME', 'nayla')
+    email = os.environ.get('DJANGO_SUPERUSER_EMAIL', 'admin@nayla.com')
+    password = os.environ.get('DJANGO_SUPERUSER_PASSWORD', '1234')
+    
+    # If no password in env, check if we should generate one
+    if not password:
+        # For production, you should ALWAYS set this in environment
+        if os.environ.get('RENDER', False):  # Running on Render
+            logging.error("DJANGO_SUPERUSER_PASSWORD environment variable not set!")
+            logging.error("Please set it in Render's environment variables.")
+            sys.exit(1)
+        else:
+            # Local development fallback
+            password = 'admin123'
+            logging.warning(f"Using default password '{password}' for local development. NOT SAFE FOR PRODUCTION!")
+    
+    # Check if user already exists
+    if User.objects.filter(username=username).exists():
+        logging.info(f"Superuser '{username}' already exists. Skipping creation.")
         return
+    
+    # Create superuser
+    try:
+        User.objects.create_superuser(
+            username=username,
+            email=email,
+            password=password
+        )
+        logging.info(f"✅ Superuser '{username}' created successfully!")
+        
+        # Log email but not password
+        logging.info(f"📧 Email: {email}")
+        if os.environ.get('RENDER', False):
+            logging.info("🔐 Password is set from environment variable")
+        else:
+            logging.info("🔐 Password is set (check your env or default)")
+            
+    except Exception as e:
+        logging.error(f"❌ Failed to create superuser: {e}")
+        sys.exit(1)
 
-    User = get_user_model()
-    user = User.objects.filter(username__iexact=username).first() or User.objects.filter(email__iexact=email).first()
-    created = False
-    if not user:
-        user = User(username=username, email=email)
-        created = True
+def main():
+    """Main function"""
+    try:
+        logging.info("Starting superuser creation script...")
+        setup_django()
+        create_superuser()
+        logging.info("Superuser script completed successfully!")
+    except Exception as e:
+        logging.error(f"❌ Error: {e}")
+        sys.exit(1)
 
-    changed = created
-    if user.username != username:
-        user.username = username
-        changed = True
-    if user.email != email:
-        user.email = email
-        changed = True
-    if not user.is_active:
-        user.is_active = True
-        changed = True
-    if not user.is_staff:
-        user.is_staff = True
-        changed = True
-    if not user.is_superuser:
-        user.is_superuser = True
-        changed = True
-    if getattr(user, "user_type", None) != "admin":
-        user.user_type = "admin"
-        changed = True
-
-    # Keep password in sync with env value
-    if not user.check_password(password):
-        user.set_password(password)
-        changed = True
-
-    if changed:
-        user.save()
-        print(f"{'Created' if created else 'Updated'} superuser: {username}")
-    else:
-        print(f"Superuser already up to date: {username}")
-
-def _unique_employee_id():
-    import random
-    import string
-
-    candidate = "TEA" + "".join(random.choices(string.digits, k=6))
-    while Teacher.objects.filter(employee_id=candidate).exists():
-        candidate = "TEA" + "".join(random.choices(string.digits, k=6))
-    return candidate
-
-
-def sync_legacy_accounts():
-    User = get_user_model()
-    synced = 0
-    created_students = 0
-    created_teachers = 0
-
-    # Keep user.registration_number aligned with Student profile data.
-    for student in Student.objects.select_related("user").all():
-        if student.user_id and student.registration_number and student.user.registration_number != student.registration_number:
-            student.user.registration_number = student.registration_number
-            student.user.save(update_fields=["registration_number"])
-            synced += 1
-
-    # Create missing Student profile for legacy student users when possible.
-    for user in User.objects.filter(user_type="student"):
-        if not Student.objects.filter(user=user).exists() and user.registration_number:
-            if not Student.objects.filter(registration_number=user.registration_number).exists():
-                full_name = (f"{user.first_name} {user.last_name}").strip() or user.username
-                Student.objects.create(
-                    user=user,
-                    full_name=full_name,
-                    registration_number=user.registration_number,
-                )
-                created_students += 1
-
-    # Create missing Teacher profile for legacy teacher users.
-    for user in User.objects.filter(user_type="teacher"):
-        if not Teacher.objects.filter(user=user).exists():
-            name = (f"{user.first_name} {user.last_name}").strip() or user.username
-            Teacher.objects.create(
-                user=user,
-                name=name,
-                employee_id=_unique_employee_id(),
-            )
-            created_teachers += 1
-
-    print(
-        "Legacy sync complete:",
-        f"registration_synced={synced},",
-        f"students_created={created_students},",
-        f"teachers_created={created_teachers}",
-    )
-
-
-if __name__ == "__main__":
-    ensure_superuser()
-    sync_legacy_accounts()
+if __name__ == '__main__':
+    main()

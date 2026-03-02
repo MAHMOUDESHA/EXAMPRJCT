@@ -59,25 +59,31 @@ WSGI_APPLICATION = 'wsgi.application'
 # ---------------- DATABASE FLEXIBLE ----------------
 # If DATABASE_URL is set (Render/Heroku), use it.
 # Otherwise, fall back to local PostgreSQL settings.
-database_url = os.environ.get("DATABASE_URL")
-if database_url:
-    DATABASES = {
-        "default": dj_database_url.config(
-            default=database_url,
-            conn_max_age=600,
-            ssl_require=not DEBUG,
-        )
-    }
-else:
-    # Safe fallback database for local/dev or temporary startup when DATABASE_URL
-    # is not yet configured on the host platform.
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
-    }
-# ---------------------------------------------------
+# database_url = os.environ.get("DATABASE_URL")
+# if database_url:
+#     DATABASES = {
+#         "default": dj_database_url.config(
+#             default=database_url,
+#             conn_max_age=600,
+#             ssl_require=not DEBUG,
+#         )
+#     }
+# else:
+#     # Safe fallback database for local/dev or temporary startup when DATABASE_URL
+#     # is not yet configured on the host platform.
+#     DATABASES = {
+#         'default': {
+#             'ENGINE': 'django.db.backends.sqlite3',
+#             'NAME': BASE_DIR / 'db.sqlite3',
+#         }
+#     }
+# # ---------------------------------------------------
+DATABASES = {
+    'default': dj_database_url.parse(
+        os.environ.get('DATABASE_URL'),
+        conn_max_age=600
+    )
+}
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},

@@ -33,5 +33,15 @@ class UsernameEmailBackend(ModelBackend):
                 candidate = teacher.user
 
         if candidate and candidate.check_password(password) and self.user_can_authenticate(candidate):
+            # Keep legacy admin flags aligned so both API and Django admin login work.
+            update_fields = []
+            if candidate.is_superuser and getattr(candidate, "user_type", None) != "admin":
+                candidate.user_type = "admin"
+                update_fields.append("user_type")
+            if getattr(candidate, "user_type", None) == "admin" and not candidate.is_staff:
+                candidate.is_staff = True
+                update_fields.append("is_staff")
+            if update_fields:
+                candidate.save(update_fields=update_fields)
             return candidate
         return None
